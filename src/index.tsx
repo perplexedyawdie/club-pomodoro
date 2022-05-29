@@ -10,7 +10,9 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <div className='flex flex-col items-center h-screen bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100'>
+      <App />
+    </div>
   </React.StrictMode>
 );
 

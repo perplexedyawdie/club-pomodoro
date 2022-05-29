@@ -3,10 +3,24 @@ import './App.css';
 import { CountdownCircleTimer } from 'react-countdown-circle-timer'
 import { Client } from "colyseus.js";
 import { Constants } from './utils/constants.enum';
+import { SocketMessages } from './utils/socket-messages.enum';
+import toast, { Toast, Toaster } from 'react-hot-toast';
 const client = new Client("ws://localhost:2567");
+const notify = () => toast.success('+1 person is studying with you!', {
+  id: 'newPerson',
+});
 
 interface SyncTimeMsg {
   initialTime: number;
+}
+
+interface NewClientMsg {
+  clientJoined: boolean;
+
+}
+
+interface ClientCountMsg {
+  clientCount: number;
 }
 function seconds2MinsSecs(remainingSeconds: number): string {
   const minutes: number = Math.floor(remainingSeconds / 60);
@@ -59,6 +73,10 @@ const TimeDisplay: React.FC<{ timeInSeconds: number }> = ({ timeInSeconds }) => 
 function App() {
   const socketConnectedRef = useRef<boolean>(false);
   const [initialTime, setInitialTime] = useState<number>(-1)
+  const [clientCount, setClientCount] = useState<number>(-1)
+  const [clientCountToastId, setClientCountToastId] = useState<string>()
+  
+
   async function connect() {
     try {
       const room = await client.joinOrCreate("club_pomo");
@@ -71,11 +89,24 @@ function App() {
         console.log("You've been disconnected.");
       });
 
-      room.onMessage("sync_time", (message: SyncTimeMsg) => {
+      room.onMessage(SocketMessages.TIME_SYNC, (message: SyncTimeMsg) => {
         console.log("message received from server");
         console.log(message.initialTime);
         setInitialTime(message.initialTime);
       });
+
+      room.onMessage(SocketMessages.NEW_CLIENT, (message: NewClientMsg) => {
+        console.log('new client message received from server');
+        console.log(message.clientJoined)
+        notify();
+      })
+
+      room.onMessage(SocketMessages.CLIENT_COUNT, (message: ClientCountMsg) => {
+        console.log('new client message received from server');
+        console.log(message.clientCount)
+        setClientCount(message.clientCount)
+      })
+
 
     } catch (e) {
       console.error("Couldn't connect:", e);
@@ -83,10 +114,23 @@ function App() {
   }
 
   useEffect(() => {
+    if (clientCount > -1 && clientCountToastId) {
+      toast.loading(`${clientCount > 1 ? `${clientCount} persons are` : `${clientCount} person is`} studying with you!`, {
+        icon: '📚',
+        id: clientCountToastId,
+      })
+    }
+  }, [clientCount, clientCountToastId])
+  
+
+  useEffect(() => {
     if (socketConnectedRef.current === false) {
       socketConnectedRef.current = true;
 
       connect()
+        .then(() => setClientCountToastId(toast.loading(`${clientCount} persons are studying with you!`, {
+          icon: '📚'
+        })))
         .catch(console.error)
     }
 
@@ -123,6 +167,10 @@ function App() {
 
         </section>
       </main>
+      <Toaster
+      position='bottom-center'
+      reverseOrder
+      />
     </>
   );
 }
