@@ -5,7 +5,7 @@ import { Client } from "colyseus.js";
 import { Constants } from './utils/constants.enum';
 import { SocketMessages } from './utils/socket-messages.enum';
 import toast, { Toast, Toaster } from 'react-hot-toast';
-const client = new Client("ws://localhost:2567");
+const client = new Client("wss://pomo.northway.pro");
 const notify = () => toast.success('+1 person is studying with you!', {
   id: 'newPerson',
 });
